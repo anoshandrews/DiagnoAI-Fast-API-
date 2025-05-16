@@ -6,3 +6,4 @@ whisper
 python-multipart
 transformers
 biopython
+reportlab
