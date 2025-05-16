@@ -1,5 +1,31 @@
 import streamlit as st
 import requests
+import sys
+from pathlib import Path
+from io import BytesIO
+
+project_root = Path(__file__).resolve().parents[1]
+sys.path.append(str(project_root))
+
+from app.services.report_generator import (
+    summarize_symptom_chat,
+    retrieve_medical_context,
+    generate_medical_report, 
+    download_medical_report_pdf,
+)
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+
+
+from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'backend'))  # add backend to path
+
+from app.services.image_captioning import run_inference
 
 # ========== Streamlit page configuration ==========
 st.set_page_config(
@@ -32,6 +58,18 @@ def send_message_to_backend(message):
     except Exception as e:
         return f"❌ Failed to connect to backend: {e}"
 
+# ========== Function to generate report ==========
+def generate_report():
+    """Generate a report based on the chat history or other relevant data."""
+    # Example report generation from chat history (this can be adjusted)
+     # Extract the chat history
+    symptom_summary = summarize_symptom_chat(st.session_state.chat_history)
+    medical_context = retrieve_medical_context(symptom_summary)
+    medical_report = generate_medical_report(symptom_summary, medical_context)
+    
+    return medical_report
+
+
 # ========== Title Layout ==========
 col1, col2 = st.columns([3, 1])
 with col1:
@@ -54,7 +92,35 @@ with col2:
     st.write('')
     st.write('')
     if col2.button("Create Report", key='report_button'):
-        st.success("✅ Report generated! (Feature coming soon)")
+        # Generate report when button is clicked
+        report_content = generate_report()
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4,
+                                rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=72)
+
+        styles = getSampleStyleSheet()
+        story = []
+
+        for line in report_content.split('\n'):
+            while '**' in line:
+                line = line.replace('**', '<b>', 1).replace('**', '</b>', 1)
+            para = Paragraph(line, styles["Normal"])
+            story.append(para)
+            story.append(Spacer(1, 0.08 * inch))
+
+        doc.build(story)
+        buffer.seek(0)
+
+        st.download_button(
+            label="📄Download Report",
+            data=buffer,
+            file_name="diagnostic_report.pdf",
+            mime="application/pdf"
+        )
+        st.success("✅ Report generated and ready to download!")
+
 
 
 for message in st.session_state.chat_history:

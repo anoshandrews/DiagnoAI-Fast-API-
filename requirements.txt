@@ -4,3 +4,5 @@ pydantic
 groq
 whisper
 python-multipart
+transformers
+biopython

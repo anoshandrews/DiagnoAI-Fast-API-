@@ -1,3 +1,11 @@
+"""
+Chat Engine Service.
+
+Handles the core business logic for interacting with the LLM,
+maintaining context, and generating structured responses based
+on user symptoms.
+"""
+
 from app.core.llm_client import groq_client
 
 SYSTEM_PROMPT = """You are a professional medical assistant by the name DiagnoAI trained in symptom triage and patient interview.

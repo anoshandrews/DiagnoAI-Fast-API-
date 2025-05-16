@@ -1,3 +1,9 @@
+"""
+Data schemas for request and response models.
+
+These schemas define the shape of data used in API communication.
+"""
+
 from pydantic import BaseModel
 from typing import Optional
 

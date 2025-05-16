@@ -1,7 +1,14 @@
+"""
+Chat Endpoint for Symptom Triage.
+
+This module defines the HTTP endpoint to handle incoming chat messages,
+communicate with the LLM, and return structured triage output.
+"""
+
+
 from fastapi import APIRouter, UploadFile, File, Form
 from app.models.schemas import ChatResponse
 from app.services.chat_engine import handle_user_prompt
-from app.services.image_processor import process_image
 
 router = APIRouter()
 
