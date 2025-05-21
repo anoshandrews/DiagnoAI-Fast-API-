@@ -1,7 +1,7 @@
 import os
 import json
-import torch
-import logging
+# import torch  commented out for hosting in AWS free tier along with everything related to the image analsis
+import logging 
 from datetime import datetime
 from typing import List, Dict
 from pathlib import Path
@@ -15,7 +15,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from groq import Groq
-from transformers import BlipProcessor, BlipForConditionalGeneration
+# from transformers import BlipProcessor, BlipForConditionalGeneration
 from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -45,8 +45,8 @@ logging.basicConfig(
 # Initialize models
 client = Groq()
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2').to('cpu')
-blip_model = BlipForConditionalGeneration.from_pretrained('Salesforce/blip-image-captioning-base')
-blip_processor = BlipProcessor.from_pretrained('Salesforce/blip-image-captioning-base', use_fast=True)
+# blip_model = BlipForConditionalGeneration.from_pretrained('Salesforce/blip-image-captioning-base')
+# blip_processor = BlipProcessor.from_pretrained('Salesforce/blip-image-captioning-base', use_fast=True)
 
 # Function to generate embeddings and store them in FAISS vector store
 def load_or_generate_vectorstore() -> FAISS:
@@ -262,26 +262,26 @@ def generate_medical_report(symptom_summary: str, medical_context: str) -> str:
     return response.choices[0].message.content.strip()
 
 
-def infer_image_description(image_file_path: str) -> str:
-    """
-    Generates a description of the medical condition in the image using a vision-language model.
+# def infer_image_description(image_file_path: str) -> str:
+#     """
+#     Generates a description of the medical condition in the image using a vision-language model.
 
-    Args:
-        image_file_path (str): Path to the input image file.
+#     Args:
+#         image_file_path (str): Path to the input image file.
 
-    Returns:
-        str: Textual description of the condition shown in the image.
-    """
-    image = Image.open(image_file_path).convert("RGB")
-    prompt = (
-        "Describe the condition shown in this image. "
-        "Does this look medically serious, or is it something that will heal on its own? "
-        "Should the person visit a doctor?"
-    )
-    inputs = blip_processor(text=prompt, images=image, return_tensors="pt")
+#     Returns:
+#         str: Textual description of the condition shown in the image.
+#     """
+#     image = Image.open(image_file_path).convert("RGB")
+#     prompt = (
+#         "Describe the condition shown in this image. "
+#         "Does this look medically serious, or is it something that will heal on its own? "
+#         "Should the person visit a doctor?"
+#     )
+#     inputs = blip_processor(text=prompt, images=image, return_tensors="pt")
 
-    with torch.no_grad():
-        output = blip_model.generate(**inputs, max_new_tokens=50)
+#     with torch.no_grad():
+#         output = blip_model.generate(**inputs, max_new_tokens=50)
 
-    return blip_processor.decode(output[0], skip_special_tokens=True)
+#     return blip_processor.decode(output[0], skip_special_tokens=True)
 
