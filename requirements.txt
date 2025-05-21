@@ -8,3 +8,4 @@ transformers
 biopython
 reportlab
 streamlit
+sentence-transformers
