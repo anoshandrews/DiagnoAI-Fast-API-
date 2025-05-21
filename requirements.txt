@@ -9,3 +9,5 @@ biopython
 reportlab
 streamlit
 sentence-transformers
+langchain-community
+
