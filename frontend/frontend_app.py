@@ -25,7 +25,7 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / 'backend'))  # add backend to path
 
-from app.services.image_captioning import run_inference
+# from app.services.image_captioning import run_inference
 
 # ========== Streamlit page configuration ==========
 st.set_page_config(
