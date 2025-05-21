@@ -7,4 +7,3 @@ python-multipart
 transformers
 biopython
 reportlab
-torch
