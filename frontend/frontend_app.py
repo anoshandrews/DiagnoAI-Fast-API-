@@ -7,7 +7,7 @@ from io import BytesIO
 project_root = Path(__file__).resolve().parents[1]
 sys.path.append(str(project_root))
 
-from app.services.report_generator import (
+from backend.app.services.report_generator import (
     summarize_symptom_chat,
     retrieve_medical_context,
     generate_medical_report, 
