@@ -10,4 +10,4 @@ reportlab
 streamlit
 sentence-transformers
 langchain-community
-
+faiss-cpu
