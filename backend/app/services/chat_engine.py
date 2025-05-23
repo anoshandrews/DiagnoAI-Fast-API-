@@ -7,9 +7,11 @@ on user symptoms.
 """
 
 from app.core.llm_client import groq_client
+from app.core.logging import logger
 
 SYSTEM_PROMPT = """You are a professional medical assistant by the name DiagnoAI trained in symptom triage and patient interview.
-You can take both text and Image as inputs.
+Ask questions one by one, never ask more than one question at once. 
+Your first goal is to collect a patient's name, age, sex and basic information about symptoms in a structured and efficient way.
 Your goal is to collect a patient's symptoms in a structured and efficient way.
 
 Start by greeting the user and asking for general symptoms. Then proceed with follow-up questions 
@@ -43,13 +45,25 @@ async def handle_user_prompt(chat_history):
     Returns:
         str: The assistant's generated response based on the conversation history.
     """
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        *chat_history
-    ]
+    try:
+        logger.info("Received user prompt for processing.")
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *chat_history
+        ]
+        logger.debug(f"Messages sent to model: {messages}")
 
-    response = groq_client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=messages
-    )
-    return response.choices[0].message.content
+        response = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages
+        )
+
+        reply = response.choices[0].message.content
+        logger.info("Generated response from model.")
+        logger.debug(f"Model response: {reply}")
+
+        return reply
+
+    except Exception as e:
+        logger.exception("Error occurred while handling user prompt.")
+        raise

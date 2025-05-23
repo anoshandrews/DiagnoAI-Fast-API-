@@ -1,0 +1,7 @@
+Metric,DiagnoAI Response,Gemini's Assessment,Comparison Score (5=Perfect; 1=Poor)
+Age Extraction Accuracy,Incorrect (identified as 35; should be 23),Correct,1
+Symptom Identification,Accurate (lower back pain; muscle fatigue; heavy lifting context),Accurate,5
+Plausibility of Diagnoses,Relevant (Latissimus Dorsi Strain; Ergogenic Muscle Strain; Herniated Disc; Muscle Imbalance),Relevant,5
+Sensibility of Recommendations,Appropriate (rest; stretching; core strengthening; PT referral),Appropriate,5
+Emphasis on Further Evaluation,Present,Present,5
+Overall Assessment,N/A,3.5/5 Stars,N/A

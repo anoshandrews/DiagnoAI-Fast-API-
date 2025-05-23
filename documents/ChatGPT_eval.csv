@@ -1,0 +1,8 @@
+Metric,Description,Prompt Example,Diagnose AI Response,ChatGPT Response,Similarity (0-1),Accuracy (0-10),Relevance (0-10),Clarity (0-10),Practicality (0-10),Comments / Notes
+Prompt,Patient symptom description or query,"Lower back pain after heavy workout","Provided patient summary & analysis","(Your own detailed response)",N/A,N/A,N/A,N/A,N/A,"Original input prompt used"
+Completeness,How fully the response covers relevant medical considerations,"Partial (some DDx, advice)","Full differential diagnosis, recommendations, next steps","Comprehensive, patient-friendly, medically sound",0.8,8,9,9,9,"Both responses cover most clinical bases"
+Medical Accuracy,Correctness of diagnosis, terminology, and suggestions,"Correct Dx & realistic treatment advice","Minor age error; good differential but some jargon","More precise terms, better clinical reasoning",0.75,7,9,8,8,"Diagnose AI errs in age, ChatGPT better on reasoning"
+Clarity & Language,Ease of understanding & tone for end user,"Clear and professional","Clear but sometimes technical","Clear, occasionally more user-friendly",0.85,N/A,N/A,9,8,"Both understandable; ChatGPT slightly more conversational"
+Practicality,Are the recommendations actionable and realistic,"Rest, PT referral, exercise advice","Good conservative advice; slight overuse of imaging","Balanced advice, includes ergonomic tips",0.8,N/A,N/A,N/A,9,"ChatGPT adds better practical guidance"
+Consistency,Consistency in details (e.g. age, symptoms),"Consistent with input","Age inconsistency","Consistent",0.6,N/A,N/A,N/A,N/A,"Diagnose AI made a notable data extraction mistake"
+Overall Rating,Weighted average based on above,N/A,"7.5 / 10","8.5 / 10",N/A,N/A,N/A,N/A,N/A,"ChatGPT scores higher due to accuracy and clarity"
