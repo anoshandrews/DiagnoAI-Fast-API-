@@ -1,0 +1,49 @@
+{
+  "cases": [
+    {
+      "id": "lower-back-pain-after-workout",
+      "score": 6,
+      "max_score": 6,
+      "checks": {
+        "summary_coverage": true,
+        "disclaimer_present": true,
+        "timeline_present": true,
+        "red_flags_present": true,
+        "recommendations_present": true,
+        "urgent_language": true
+      },
+      "patient_summary": "I'm 23 and I have lower back pain after a heavy workout. It started yesterday and gets worse when I bend forward. It started yesterday after deadlifts and feels about a 6 out of 10."
+    },
+    {
+      "id": "chest-pain-and-breathing-trouble",
+      "score": 6,
+      "max_score": 6,
+      "checks": {
+        "summary_coverage": true,
+        "disclaimer_present": true,
+        "timeline_present": true,
+        "red_flags_present": true,
+        "recommendations_present": true,
+        "urgent_language": true
+      },
+      "patient_summary": "I have chest tightness and shortness of breath that started this morning. It is getting worse and I feel lightheaded."
+    },
+    {
+      "id": "sore-throat-fever",
+      "score": 6,
+      "max_score": 6,
+      "checks": {
+        "summary_coverage": true,
+        "disclaimer_present": true,
+        "timeline_present": true,
+        "red_flags_present": true,
+        "recommendations_present": true,
+        "urgent_language": true
+      },
+      "patient_summary": "I have had a sore throat, mild fever, and dry cough for three days."
+    }
+  ],
+  "passed_checks": 18,
+  "total_checks": 18,
+  "fixtures": "evals/fixtures/golden_cases.json"
+}

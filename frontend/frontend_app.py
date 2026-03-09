@@ -1,35 +1,14 @@
 import streamlit as st
 import requests
-import sys
-from pathlib import Path
-from io import BytesIO
 import logging
-
-# Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-project_root = Path(__file__).resolve().parents[1]
-sys.path.append(str(project_root))
-
-from backend.app.services.report_generator import (
-    summarize_symptom_chat,
-    retrieve_medical_context,
-    generate_medical_report,
-    download_medical_report_pdf,
-)
+from io import BytesIO
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 
-
-from pathlib import Path
-import sys
-
-sys.path.append(str(Path(__file__).resolve().parents[1] / 'backend'))  # add backend to path
-
-# from app.services.image_captioning import run_inference
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # ========== Streamlit page configuration ==========
 st.set_page_config(
@@ -39,24 +18,28 @@ st.set_page_config(
 )
 
 # ========== FastAPI Backend URL ==========
-BACKEND_URL = "http://localhost:8000/api/v1/chat"  # Adjust if deployed elsewhere
+BACKEND_CHAT_URL = "http://localhost:8000/api/v1/chat"
+BACKEND_REPORT_URL = "http://localhost:8000/api/v1/report"
 
 # ========== Initialize session chat history ==========
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "session_id" not in st.session_state:
+    st.session_state.session_id = "streamlit-session"
 
 # ========== Function to send chat to backend ==========
 def send_message_to_backend(message):
-    """Sends the user's message to the backend and returns the response."""
     logging.info(f"Sending message to backend: '{message}'")
     try:
         response = requests.post(
-            BACKEND_URL,
-            data={"user_text": message},
-            files={}  # you can add image here if needed
+            BACKEND_CHAT_URL,
+            json={"user_text": message, "session_id": st.session_state.session_id},
+            timeout=30,
         )
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-        reply = response.json().get("reply")  # Safely get the reply
+        response.raise_for_status()
+        payload = response.json()
+        reply = payload.get("reply")
+        st.session_state.session_id = payload.get("session_id", st.session_state.session_id)
         logging.info(f"Backend response: '{reply}'")
         return reply if reply is not None else "No response from backend."
     except requests.exceptions.RequestException as e:
@@ -72,14 +55,17 @@ def send_message_to_backend(message):
 
 # ========== Function to generate report ==========
 def generate_report():
-    """Generate a report based on the chat history."""
     logging.info("Generating medical report.")
     try:
-        symptom_summary = summarize_symptom_chat(st.session_state.chat_history)
-        medical_context = retrieve_medical_context(symptom_summary)
-        medical_report = generate_medical_report(symptom_summary, medical_context)
+        response = requests.post(
+            BACKEND_REPORT_URL,
+            json={"chat_history": st.session_state.chat_history},
+            timeout=30,
+        )
+        response.raise_for_status()
+        payload = response.json()
         logging.info("Medical report generated successfully.")
-        return medical_report
+        return payload.get("markdown", "No report content returned.")
     except Exception as e:
         error_message = f"❌ Error generating report: {e}"
         logging.error(error_message)
@@ -152,30 +138,14 @@ for message in st.session_state.chat_history:
 user_input = st.chat_input(
     "Tell me about your symptoms...",
     key='user_prompt',
-    accept_file=True,                                      #for taking in images as well
-    file_type=['jpg','png','jpeg'],
 )
 
 if user_input:
-    user_text = user_input.get("text", "")
-    user_image = user_input.get("files", [])
+    st.chat_message("user").markdown(user_input)
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
+    logging.info(f"User message: '{user_input}'")
 
-    if user_text:
-        # Show user input
-        st.chat_message("user").markdown(user_text)
-        st.session_state.chat_history.append({"role": "user", "content": user_text})
-        logging.info(f"User message: '{user_text}'")
+    assistant_reply = send_message_to_backend(user_input)
 
-        # Call backend API
-        assistant_reply = send_message_to_backend(user_text)
-
-        # Show assistant response
-        st.chat_message("assistant").markdown(assistant_reply)
-        st.session_state.chat_history.append({"role": "assistant", "content": assistant_reply})
-
-    if user_image:
-        for file in user_image:
-            st.chat_message("user").markdown(f"Uploaded image: `{file.name}`")
-            st.image(file)
-            logging.info(f"User uploaded image: {file.name}")
-            # Steps to be added to pass the image to CNN:Resnet-50
+    st.chat_message("assistant").markdown(assistant_reply)
+    st.session_state.chat_history.append({"role": "assistant", "content": assistant_reply})

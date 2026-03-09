@@ -1,9 +1,12 @@
 from fastapi import APIRouter, UploadFile, File
-from app.services.image_captioning import run_inference
+from fastapi import HTTPException
 
 router = APIRouter()
 
 @router.post("/image-caption")
 async def caption_image(file: UploadFile = File(...)):
-    result = run_inference(file.file)
-    return {"caption": result}
+    del file
+    raise HTTPException(
+        status_code=501,
+        detail="Image captioning is not enabled in the modernized API yet.",
+    )

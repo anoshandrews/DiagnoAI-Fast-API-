@@ -1,0 +1,19 @@
+.DS_Store
+.env
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+*.pkl
+*.faiss
+*.log
+backend/logs/
+backend/app/models/
+backend/app/vectorstore/
+backend/app/vectorstore copy/
+dist/
+build/
+*.egg-info/

@@ -1,30 +1,15 @@
-from fastapi import APIRouter, UploadFile, File
-from app.services import report_generator
-from typing import List
-import shutil
-import os
+from fastapi import APIRouter
+
+from backend.app.models.schemas import ReportRequest, ReportResponse
+from backend.app.services.report_generator import (
+    generate_medical_report,
+    render_medical_report_markdown,
+)
 
 router = APIRouter()
 
-@router.post("/generate_report/")
-async def generate_report(chat_history: List[str]):
-    """
-    Accepts a list of user messages and returns a medical report.
-    """
-    summary = report_generator.summarize_chat(chat_history)
-    context = report_generator.retrieve_context(summary)
-    report = report_generator.build_report(summary, context)
-    return {"report": report}
 
-@router.post("/analyze_image/")
-async def analyze_image(file: UploadFile = File(...)):
-    """
-    Analyzes an uploaded image and returns a medical caption.
-    """
-    temp_path = f"/tmp/{file.filename}"
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    result = report_generator.run_inference(temp_path)
-    os.remove(temp_path)
-    return {"caption": result}
+@router.post("", response_model=ReportResponse)
+async def generate_report(payload: ReportRequest) -> ReportResponse:
+    report = generate_medical_report(payload.chat_history)
+    return ReportResponse(report=report, markdown=render_medical_report_markdown(report))

@@ -1,28 +1,32 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from backend.app.services.chat_engine import handle_user_prompt
+import asyncio
 
-@pytest.mark.asyncio
-async def test_handle_user_prompt_success():
-    chat_history = [{"role": "user", "content": "I have a headache and fever."}]
-    expected_reply = "Can you tell me how long you've had the headache?"
+from backend.app.models.schemas import ChatMessage
+from backend.app.services import chat_engine
 
-    # Patch the Groq client used inside the chat_engine module
-    with patch("app.services.chat_engine.groq_client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = expected_reply
-        mock_client.chat.completions.create.return_value = mock_response
 
-        result = await handle_user_prompt(chat_history)
-        assert result == expected_reply
+def test_handle_user_prompt_uses_llm(monkeypatch):
+    history = [ChatMessage(role="user", content="I have a headache.")]
 
-@pytest.mark.asyncio
-async def test_handle_user_prompt_failure():
-    chat_history = [{"role": "user", "content": "I have chest pain."}]
+    def fake_generate_text(*, messages, temperature=0.2, model=None):
+        del temperature, model
+        assert messages[0]["role"] == "system"
+        assert messages[1]["content"] == "I have a headache."
+        return "How long have you had the headache?"
 
-    with patch("app.services.chat_engine.groq_client") as mock_client:
-        mock_client.chat.completions.create.side_effect = Exception("LLM error")
+    monkeypatch.setattr(chat_engine, "generate_text", fake_generate_text)
 
-        with pytest.raises(Exception, match="LLM error"):
-            await handle_user_prompt(chat_history)
+    reply = asyncio.run(chat_engine.handle_user_prompt(history))
+    assert reply == "How long have you had the headache?"
+
+
+def test_handle_user_prompt_falls_back_without_llm(monkeypatch):
+    history = [ChatMessage(role="user", content="I feel dizzy.")]
+
+    def raise_error(*, messages, temperature=0.2, model=None):
+        del messages, temperature, model
+        raise chat_engine.LLMClientError("missing key")
+
+    monkeypatch.setattr(chat_engine, "generate_text", raise_error)
+
+    reply = asyncio.run(chat_engine.handle_user_prompt(history))
+    assert "When did these symptoms start" in reply

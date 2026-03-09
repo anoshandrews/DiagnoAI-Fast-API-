@@ -1,12 +1,48 @@
-"""
-Data schemas for request and response models.
+from typing import Literal
+from uuid import uuid4
 
-These schemas define the shape of data used in API communication.
-"""
+from pydantic import BaseModel, Field, model_validator
 
-from pydantic import BaseModel
-from typing import Optional
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant", "system"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    user_text: str = Field(min_length=1, max_length=2000)
+    session_id: str | None = None
+
+    @model_validator(mode="after")
+    def set_session_id(self) -> "ChatRequest":
+        if not self.session_id:
+            self.session_id = str(uuid4())
+        return self
+
 
 class ChatResponse(BaseModel):
+    session_id: str
     reply: str
-    image_analysis: Optional[str] = None
+    chat_history: list[ChatMessage]
+
+
+class MedicalReport(BaseModel):
+    patient_summary: str
+    symptom_timeline: list[str]
+    red_flags: list[str]
+    recommended_next_steps: list[str]
+    disclaimer: str
+
+
+class ReportRequest(BaseModel):
+    chat_history: list[ChatMessage] = Field(min_length=1)
+
+
+class ReportResponse(BaseModel):
+    report: MedicalReport
+    markdown: str
+
+
+class HealthResponse(BaseModel):
+    status: Literal["ok"]
+    service: str

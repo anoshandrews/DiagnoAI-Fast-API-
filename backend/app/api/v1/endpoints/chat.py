@@ -1,50 +1,36 @@
-"""
-Chat Endpoint for Symptom Triage.
+from fastapi import APIRouter, HTTPException, Request
 
-This module defines the HTTP endpoint to handle incoming chat messages,
-communicate with the LLM, and return structured triage output.
-"""
-
-
-from fastapi import APIRouter, UploadFile, File, Form
-from app.models.schemas import ChatResponse
-from app.services.chat_engine import handle_user_prompt
+from backend.app.models.schemas import ChatMessage, ChatRequest, ChatResponse
+from backend.app.services.chat_engine import handle_user_prompt
+from backend.app.services.session_store import session_store
 
 router = APIRouter()
 
-# Simplified in-memory session (mock session state)
-SESSION_STATE = {
-    "chat_history": []
-}
 
-@router.post("/chat", response_model=ChatResponse)
-async def chat(
-    user_text: str = Form(...),
-    image: UploadFile = File(None)
-):
-    """
-    Handles chat interaction with the DiagnoAI assistant.
+@router.post("", response_model=ChatResponse)
+async def chat(request: Request) -> ChatResponse:
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        payload = ChatRequest.model_validate(await request.json())
+    else:
+        form = await request.form()
+        payload = ChatRequest.model_validate(
+            {
+                "user_text": form.get("user_text"),
+                "session_id": form.get("session_id"),
+            }
+        )
 
-    This endpoint accepts user-submitted text and an optional image (e.g., an X-ray or medical scan).
-    It appends the user's text to a shared session state and generates an AI response using a language model.
-    If an image is provided, it processes the image (e.g., for medical classification) and returns analysis results.
+    if not payload.user_text.strip():
+        raise HTTPException(status_code=422, detail="user_text cannot be empty.")
 
-    Args:
-        user_text (str): User's message or symptom description, sent via a form.
-        image (UploadFile, optional): An optional medical image file (JPG, PNG, etc.) for diagnostic analysis.
-
-    Returns:
-        ChatResponse: A JSON response containing the assistant's text reply and optional image analysis.
-    """
-    reply = ""
-    image_info = None
-
-    if user_text:
-        SESSION_STATE["chat_history"].append({"role": "user", "content": user_text})
-        reply = await handle_user_prompt(SESSION_STATE["chat_history"])
-        SESSION_STATE["chat_history"].append({"role": "assistant", "content": reply})
-
-    if image:
-        image_info = await process_image(image)
-
-    return ChatResponse(reply=reply, image_analysis=image_info)
+    history = session_store.append(
+        payload.session_id,
+        ChatMessage(role="user", content=payload.user_text.strip()),
+    )
+    reply = await handle_user_prompt(history)
+    history = session_store.append(
+        payload.session_id,
+        ChatMessage(role="assistant", content=reply),
+    )
+    return ChatResponse(session_id=payload.session_id, reply=reply, chat_history=history)

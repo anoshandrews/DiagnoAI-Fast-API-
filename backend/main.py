@@ -1,34 +1,29 @@
-"""
-Main entry point for the FastAPI backend.
-
-This module initializes the FastAPI app, includes API routers,
-and configures any necessary middleware or startup events.
-"""
-
-
 from fastapi import FastAPI
-from app.api.v1.endpoints import chat
-# from app.api.v1.endpoints import image_caption
-from app.api.v1.endpoints import report
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.api.v1.router import api_router
+from backend.app.core.config import get_settings
+from backend.app.models.schemas import HealthResponse
+
+settings = get_settings()
 
 app = FastAPI(
-    title="DiagnoAI",
-    version="1.0.0",
-    description="Your AI medical assistant"
+    title=settings.app_name,
+    version=settings.app_version,
+    description="Structured symptom intake assistant for clinician handoff.",
 )
 
-# CORS setup to allow frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # you can restrict this later
+    allow_origins=settings.allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.include_router(api_router, prefix="/api/v1")
 
-app.include_router(chat.router, prefix="/api/v1", tags=["chat"])   
-# app.include_router(image_caption.router, prefix="/api/v1")
-app.include_router(report.router, prefix = "/report", tags = ['Report'])
+
+@app.get("/health", response_model=HealthResponse)
+async def healthcheck() -> HealthResponse:
+    return HealthResponse(status="ok", service=settings.app_name)
