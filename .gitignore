@@ -11,9 +11,10 @@ __pycache__/
 *.faiss
 *.log
 backend/logs/
-backend/app/models/
+backend/app/models/*.pkl
 backend/app/vectorstore/
-backend/app/vectorstore copy/
+"backend/app/vectorstore copy/"
 dist/
 build/
 *.egg-info/
+.chainlit/translations/

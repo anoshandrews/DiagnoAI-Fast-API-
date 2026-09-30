@@ -1,49 +1,45 @@
 # AGENTS.md
 
 ## Repo Snapshot
-- Project: DiagnoAI (FastAPI symptom intake assistant).
-- Purpose: Collect structured symptom details and generate a clinician handoff report.
-- Current status: Modernized safe-scope intake; retrieval/RAG is legacy and not active in API flow.
+- Project: DiagnoAI (Stateful LangGraph Symptom Intake Assistant).
+- Purpose: Collect structured clinical symptom details (SOCRATES / OPQRST) and generate a clinician handoff report.
+- Target Runtime: Free tier of Vercel Serverless Functions (< 30 MB bundle, zero PyTorch/Transformers).
+- Database & Persistence: Supabase (PostgreSQL) with in-memory local fallback.
 
-## Architecture (POC)
+## Architecture
 - FastAPI app entry: `backend/main.py`
+- Vercel serverless entry: `api/index.py`
 - API router: `backend/app/api/v1/router.py`
-- Chat endpoint: `backend/app/api/v1/endpoints/chat.py`
+- Chat endpoint: `backend/app/api/v1/endpoints/chat.py` (wired to LangGraph)
+- Voice endpoint: `backend/app/api/v1/endpoints/voice.py` (Groq Whisper Turbo)
+- Clinician endpoint: `backend/app/api/v1/endpoints/clinician.py` (Admin CRUD & session review)
 - Report endpoint: `backend/app/api/v1/endpoints/report.py`
-- Chat orchestration: `backend/app/services/chat_engine.py`
-- Report generation: `backend/app/services/report_generator.py`
-- Session store: `backend/app/services/session_store.py` (in-memory)
-- LLM client: `backend/app/core/llm_client.py` (Groq)
+- LangGraph Workflow: `backend/app/graph/workflow.py`
+  - Nodes: `backend/app/graph/nodes.py` (context hydrator, triage guardrails, symptom slot extractor, adaptive questioner, handoff synthesizer)
+  - State: `backend/app/graph/state.py` (`AgentState` with Pydantic schemas)
+- Storage layer: `backend/app/core/db.py` (Dual-mode: Supabase PostgreSQL + in-memory dev fallback)
+- LLM & Audio client: `backend/app/core/llm_client.py` (Groq LLM + Groq Whisper)
 - Config: `backend/app/core/config.py`
 - Schemas: `backend/app/models/schemas.py`
+- Frontend: `frontend/chainlit_app.py` (Modern Chainlit UI: Patient Intake & Clinician Admin)
 - Eval runner: `scripts/run_eval.py`
 
 ## API Surface
 - `GET /health`
 - `POST /api/v1/chat`
+- `POST /api/v1/voice/transcribe`
 - `POST /api/v1/report`
+- `POST /api/v1/clinician/patients/{patient_id}`
+- `GET /api/v1/clinician/patients`
+- `GET /api/v1/clinician/patients/{patient_id}`
+- `GET /api/v1/clinician/patients/{patient_id}/sessions`
+- `GET /api/v1/clinician/sessions/{session_id}`
 
 ## Runtime and Config
-- Python with FastAPI.
-- Environment variables: `GROQ_API_KEY`, `GROQ_MODEL_NAME`, `ALLOW_ORIGINS`.
-- If `GROQ_API_KEY` is missing or Groq client fails, LLM calls fall back to deterministic behavior.
-
-## Model and Behavior
-- Chat: LLM-driven follow-up questions using `SYSTEM_PROMPT` in `chat_engine.py`.
-- Report: LLM JSON output parsed into `MedicalReport` with fallback if LLM unavailable.
-- Safety: Explicit “no diagnosis” instructions in prompt and report disclaimer.
-
-## Retrieval / Dynamic RAG Status
-- RAG is not active in the API flow.
-- `report_generator.retrieve_medical_context()` is stubbed and returns a static message.
-- `query_pubmed()` returns an empty list.
-- `vectorstore_builder.py` is a standalone utility and not wired into endpoints.
+- Python 3.11+ with FastAPI & LangGraph.
+- Environment variables: `GROQ_API_KEY`, `GROQ_MODEL_NAME`, `GROQ_WHISPER_MODEL`, `CLINICIAN_SECRET_KEY`, `SUPABASE_DB_URL`, `ALLOW_ORIGINS`.
+- Resilient fallbacks: deterministic slot extraction, emergency alerts, and question templates if `GROQ_API_KEY` is not present.
 
 ## Tests and Evals
-- Tests: `tests/backend/app/` cover chat and report routes, fallback paths, and eval runner behavior.
-- Eval runner: `scripts/run_eval.py` uses `evals/fixtures/golden_cases.json` and writes `evals/results/latest.json`.
-
-## Working Notes for Agents
-- Assume local in-memory session state; no DB/Redis.
-- RAG references in older docs are legacy. Confirm code path before assuming retrieval.
-- If implementing retrieval, wire it into `report_generator.generate_medical_report()` or a new pipeline module and add tests + eval fixtures.
+- Run test suite: `pytest -p no:langsmith -p no:asyncio tests/backend/app/ -v`
+- Run golden-case evals: `python scripts/run_eval.py`
